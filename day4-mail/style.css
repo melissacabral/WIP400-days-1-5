@@ -1,0 +1,28 @@
+body{
+	font-family: Cambria, Georgia, serif;
+}
+form ol,
+form li{
+	list-style-type: none;
+	margin: 1em 0;
+	padding: 0;
+}
+
+label{
+	display: block;
+	
+}
+/*buttons*/
+input[type=submit]{
+	display: block;
+	cursor: pointer;
+}
+/*feedback*/
+.success{
+	background-color: #98FFA9;
+	padding:.5em;
+}
+.error{
+	background-color: #FFBFBF;
+	padding: .5em;
+}
