@@ -1,32 +1,18 @@
-<?php
-//opens or resumes a session
-session_start(); 
-//parse the form if it was submitted
-if( $_POST['did_login'] == true ){
-	//extract the user submitted data
-	$username = $_POST['username'];
-	$password = $_POST['password'];
+<?php 
+//supress Notice: messages
+error_reporting( E_ALL & ~E_NOTICE ); 
 
-	//TEMPORARY:  the correct credentials. we will replace this with database driven logic in the future
-	$correct_username = 'melissa';
-	$correct_password = 'phprules';
+//we need to use session data on this page. 
+session_start();
 
-	//compare the user submitted values with the correct credentials
-	//if they match, log them in
-	if( $username == $correct_username AND $password == $correct_password ){
-		//success!  remember the user for 1 week
-		setcookie( 'loggedin', true, time() + 60 * 60 * 24 * 7 );
-		$_SESSION['loggedin'] = true;
-		$message = 'You are now logged in';
-	}else{
-		$message = 'Your username and password combo is incorrect.';
-	} //end if creds match
+//re-create the session if the cookie is still valid
+if( $_COOKIE['loggedin'] ){
+	$_SESSION['loggedin'] = 1;
+}
 
-}//end if did login
-
-
+//Logout Action
 if( $_GET['action'] == 'logout' ){
-	//remove the session_id cookie from the user's computer
+	//close the session and the associated cookie. this snippet is from php.net
 	if (ini_get("session.use_cookies")) {
 		$params = session_get_cookie_params();
 		setcookie(session_name(), '', time() - 42000,
@@ -34,45 +20,77 @@ if( $_GET['action'] == 'logout' ){
 			$params["secure"], $params["httponly"]
 			);
 	}
-	//close the session on the server
-	session_destroy(); 
-	//remove all the session vars we created
-	unset( $_SESSION['loggedin'] );
-	//set cookies to null
-	setcookie( 'loggedin', '' );
-}
-elseif( $_COOKIE['loggedin'] == true ){
-	$_SESSION['loggedin'] = true;
-}
+	session_destroy();
+	//erase all session vars
+	$_SESSION['loggedin'] = false;
+	//unset all cookies
+	setcookie( 'loggedin', false, time() -9999999 );
+}//end of logout action
+
+//if the form was submitted, parse it
+if( $_POST['did_login'] ){
+	//extract the data
+	$username = $_POST['username'];
+	$password = $_POST['password'];
+	//todo: sanitize the data
+	//todo: validate the data
+	//check the credentials
+	$correct_username = 'melissa';
+	$correct_password = 'phprules';
+	//send the user to the secret page if they got it right, or show an error
+	if( $username == $correct_username AND $password == $correct_password ){
+		//success - remember the user for 1 day and then redirect to secret page
+		setcookie( 'loggedin', 1, time() + 60 * 60 * 24 );
+		$_SESSION['loggedin'] = 1;
+
+		header('Location:secret.php');
+	}else{
+		//error - user feedback
+		$error_message = 'Sorry, your username/password combo is incorrect. Try again.';
+	}
+} //end of login parser	
 ?>
 <!DOCTYPE html>
 <html>
 <head>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta charset="utf-8">
-	<title>Simple Login Form</title>
+	<title>Log in to your account</title>
+	<link rel="stylesheet" type="text/css" href="style.css">
 </head>
 <body>
-	<?php //if the user is logged in, hide the form
-	if( $_SESSION['loggedin'] == true ){
-		include('content-loggedin.php');
-	}else{ ?>
-	<h1>Log In to Your Account</h1>
 
-	<?php echo $message; //success/fail message from above ?>
+	<?php 
+//if we're already logged in, don't show the login form
+	if( ! $_SESSION['loggedin'] ){ 
+		?>
+		<h1>Log in to your account</h1>
 
-	<form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="post">
-		
-		<label for="username">Username:</label>
-		<input type="text" name="username" id="username">
+		<?php if( $_POST['did_login'] ){ ?>
+		<div class="feedback">
+			<?php echo $error_message; ?>
+		</div>
+		<?php } ?>
 
-		<label for="password">Password:</label>
-		<input type="password" name="password" id="password">
+		<form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
 
-		<input type="submit" value="Log In!">
-		<input type="hidden" name="did_login" value="true">
-	</form>
+			<label for="the_username">Username</label>
+			<input type="text" name="username" id="the_username" required>
 
-	<?php } //end if logged in ?>
+			<label for="the_password">Password</label>
+			<input type="password" name="password" id="the_password" required>
 
+			<input type="submit" value="Log In">
+
+			<input type="hidden" name="did_login" value="1">
+		</form>
+		<?php 
+	}else{
+		echo 'You are logged in. Visit your <a href="secret.php">secret page</a>. ';
+	} ?>
+
+	<footer>
+		This site uses cookies to improve your experience. 
+	</footer>
 </body>
 </html>
